@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>תוכנית משפחתית — קוטאי</title>
+<style>
+:root{
+  --bg:#0f1419; --card:#1a222c; --card2:#212c38; --txt:#e8edf2; --mut:#8b98a5;
+  --green:#25D366; --red:#ef476f; --orange:#ff9f1c; --blue:#4cc9f0; --line:#2b3744;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+.wrap{max-width:920px;margin:0 auto;padding:12px 14px 80px}
+.hero{background:linear-gradient(135deg,#1d3557,#3a0ca3);border-radius:18px;padding:20px;text-align:center;margin-bottom:12px}
+.hero h1{font-size:1.5em}
+.hero p{color:#cfd8e3;font-size:.85em}
+.tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.tab{flex:1;min-width:70px;background:var(--card);border:1px solid var(--line);color:var(--mut);padding:9px 4px;border-radius:11px;cursor:pointer;font-size:.82em;font-weight:700;text-align:center}
+.tab.active{background:var(--green);color:#06281a;border-color:var(--green)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border-radius:14px;padding:15px;margin-bottom:11px;border:1px solid var(--line)}
+.card h3{margin-bottom:8px;font-size:1em}
+.mut{color:var(--mut);font-size:.8em}
+.big{font-size:1.7em;font-weight:800}
+.pos{color:var(--green)}.neg{color:var(--red)}.warn{color:var(--orange)}
+.row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.btn{background:var(--green);color:#06281a;border:none;padding:9px 15px;border-radius:9px;font-weight:800;cursor:pointer;font-size:.88em}
+.btn.blue{background:var(--blue);color:#04222e}.btn.gray{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.btn.orange{background:var(--orange);color:#2b1700}.btn.red{background:var(--red);color:#fff}
+input,select{background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:9px;font-size:.9em;width:100%}
+label{font-size:.78em;color:var(--mut);display:block;margin:5px 0 2px}
+table{width:100%;border-collapse:collapse;font-size:.85em}
+th{color:var(--mut);text-align:right;padding:5px 3px;border-bottom:1px solid var(--line)}
+td{padding:6px 3px;border-bottom:1px solid var(--line)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--card);border-radius:11px;padding:9px;text-align:center;border:1px solid var(--line)}
+.stat b{display:block;font-size:1.2em}
+.stat small{color:var(--mut);font-size:.72em}
+.bar{height:9px;background:var(--card2);border-radius:5px;overflow:hidden;margin:4px 0}
+.bar>div{height:100%;background:var(--green);border-radius:5px}
+.bar.red>div{background:var(--red)}.bar.orange>div{background:var(--orange)}
+.exp-row{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px dashed var(--line);font-size:.88em}
+.exp-row:last-child{border:none}
+.alert{background:#3d1f2a;border:1px solid var(--red);border-radius:11px;padding:12px;margin-bottom:10px}
+.alert.good{background:#123523;border-color:var(--green)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:9px 18px;border-radius:18px;font-size:.85em;opacity:0;transition:.3s;z-index:99;max-width:90vw;text-align:center}
+.toast.show{opacity:1}.toast.err{background:#c0392b}
+.footer{text-align:center;color:var(--mut);font-size:.72em;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <h1>🏠 תוכנית משפחתית — קוטאי</h1>
+    <p>תקציב · תזרים · חובות · תוכנית יציאה מהמינוס</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dash')">📊 מצב</button>
+    <button class="tab" onclick="showTab('budget')">💰 תקציב</button>
+    <button class="tab" onclick="showTab('loan')">🏦 הלוואה</button>
+    <button class="tab" onclick="showTab('cash')">💳 תזרים</button>
+    <button class="tab" onclick="showTab('plan')">🎯 תוכנית</button>
+  </div>
+
+  <!-- מצב כללי -->
+  <div class="panel active" id="panel-dash">
+    <div id="dashAlert"></div>
+    <div class="grid4">
+      <div class="stat"><b id="dBalance">—</b><small>יתרת עו"ש (אומדן)</small></div>
+      <div class="stat"><b id="dFrame">55,000</b><small>מסגרת אשראי</small></div>
+      <div class="stat"><b id="dIncome">30,000</b><small>הכנסה חודשית נטו</small></div>
+      <div class="stat"><b id="dFixed">18,299</b><small>הוצאות קבועות</small></div>
+    </div>
+    <div class="card">
+      <h3>📆 הורדות קרובות</h3>
+      <div id="dUpcoming"></div>
+    </div>
+    <div class="card">
+      <h3>💳 ניצול מסגרת</h3>
+      <div class="bar" id="frameBarWrap"><div id="frameBar" style="width:0%"></div></div>
+      <p class="mut" id="frameText"></p>
+    </div>
+  </div>
+
+  <!-- תקציב -->
+  <div class="panel" id="panel-budget">
+    <div class="grid2">
+      <div class="card">
+        <h3>💵 הכנסות</h3>
+        <div id="incomeList"></div>
+        <div class="exp-row"><b>סה"כ</b><b id="totalIncome"></b></div>
+      </div>
+      <div class="card">
+        <h3>📉 הוצאות קבועות</h3>
+        <div id="expList"></div>
+        <div class="exp-row"><b>סה"כ קבוע</b><b id="totalExp"></b></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🧮 חישוב פנוי חודשי</h3>
+      <div class="row">
+        <div class="grow"><label>אוכל/סופר/תרופות (אומדן חודשי)</label><input type="number" id="foodEst" onchange="recalcFree()"></div>
+        <div class="grow"><label>החזר הלוואה חדשה (כשנלקחת)</label><input type="number" id="loanEst" onchange="recalcFree()"></div>
+      </div>
+      <div class="grid4" style="margin-top:10px">
+        <div class="stat"><b id="fIncome">30,000</b><small>הכנסות</small></div>
+        <div class="stat"><b id="fExp">18,299</b><small>קבועות</small></div>
+        <div class="stat"><b id="fOther">0</b><small>נוספות</small></div>
+        <div class="stat"><b id="fFree">—</b><small>פנוי אמיתי</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- הלוואה -->
+  <div class="panel" id="panel-loan">
+    <div id="loanAlert"></div>
+    <div class="card">
+      <h3>🏦 כמה הלוואה צריך?</h3>
+      <p class="mut">החישוב: מינוס נוכחי + הורדות קרובות − משכורות נכנסות = מה שצריך לכסות כדי להישאר במסגרת עם מרווח נשימה.</p>
+      <div class="grid4" style="margin-top:8px">
+        <div class="stat"><b class="neg">43,000</b><small>מינוס עכשיו</small></div>
+        <div class="stat"><b class="neg" id="lDrops">44,042</b><small>הורדות עד 11.9</small></div>
+        <div class="stat"><b class="pos" id="lIn">10,000</b><small>משכורת נכנסת</small></div>
+        <div class="stat"><b class="warn" id="lNeed">—</b><small>צריך לכסות</small></div>
+      </div>
+      <div id="loanCalc" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3>🧮 סימולטור החזר</h3>
+      <div class="row">
+        <div class="grow"><label>סכום הלוואה (₪)</label><input type="number" id="simAmt" value="40000" oninput="simulate()"></div>
+        <div class="grow"><label>תקופה (חודשים)</label><input type="number" id="simMonths" value="60" oninput="simulate()"></div>
+        <div class="grow"><label>ריבית שנתית (%)</label><input type="number" id="simRate" value="8" oninput="simulate()"></div>
+      </div>
+      <div class="grid4" style="margin-top:10px">
+        <div class="stat"><b id="simPmt">—</b><small>החזר חודשי</small></div>
+        <div class="stat"><b id="simTotal">—</b><small>סה"כ החזר</small></div>
+        <div class="stat"><b id="simCost">—</b><small>עלות ריבית</small></div>
+        <div class="stat"><b id="simFeas">—</b><small>מתאים? (פנוי אחרי)</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- תזרים -->
+  <div class="panel" id="panel-cash">
+    <div class="card">
+      <h3>💳 מעקב עו"ש חודשי</h3>
+      <p class="mut">עדכנו את היתרה בפועל כל כמה ימים — הפלטפורמה זוכרת ומראה מגמה.</p>
+      <div class="row">
+        <input type="date" id="balDate" class="grow" style="flex:1">
+        <input type="number" id="balAmount" placeholder="יתרה (שלילית = מינוס)" class="grow" style="flex:1">
+        <button class="btn blue" onclick="addBalance()">➕ שמירה</button>
+      </div>
+      <div id="balHistory" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3>🗓️ הורדות ידועות הקרובות</h3>
+      <div id="upcomingList"></div>
+    </div>
+  </div>
+
+  <!-- תוכנית -->
+  <div class="panel" id="panel-plan">
+    <div class="card">
+      <h3>🎯 תוכנית יציאה מהמינוס — 6 צעדים</h3>
+      <div id="planSteps"></div>
+    </div>
+    <div class="card">
+      <h3>✅ צ'קליסט חודשי</h3>
+      <div id="planChecks"></div>
+    </div>
+  </div>
+
+  <div class="footer">תוכנית משפחתית קוטאי · נבנה ע"י Hermes · אינו ייעוץ פיננסי מוסמך</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== נתוני בסיס ===== */
+const BIN_ID = '6a992829da38895dfe32e21d';
+const MASTER_KEY = '$2a$10$Mo79nkShmWdnLxq6LDZFYuHVuFVc3LSVJ3dw6zKld8HgySkA5Mkxq';
+const INCOME = [
+  {n:'נדב — משכורת', v:18000},
+  {n:'טל — משכורת', v:12000}
+];
+const EXPENSES = [
+  {n:'שכירות', v:7250},{n:'חשמל', v:800},{n:'גן ניב', v:3900},{n:'צהרון אימרי', v:800},
+  {n:'הלוואה קיימת 1', v:960},{n:'הלוואה קיימת 2', v:411},{n:'מכון כושר', v:300},{n:'מים', v:400},
+  {n:'גז', v:100},{n:'ארנונה (ממוצע)', v:375},{n:'רייזאפ', v:55},{n:'ביטוחים', v:1000},
+  {n:'דיגיטל', v:209},{n:'ועד בית', v:780},{n:'מרפאט', v:130},{n:'קרנות השוטרים', v:41},
+  {n:'דמי כרטיס', v:9},{n:'פנגו', v:100},{n:'תקשורת', v:179},{n:'כללית', v:500}
+];
+const UPCOMING = [
+  {d:'2026-09-10', n:'כאל — חיוב', v:892},
+  {d:'2026-09-10', n:'ישראכרט — חיוב', v:32000},
+  {d:'2026-09-11', n:'שכירות', v:7250},
+  {d:'2026-09-11', n:'שיק גן ניב', v:3900}
+];
+const FRAME = 55000;
+const START_BALANCE = -43000;
+
+/* ===== מדינה ===== */
+let balances = {};  // {date: amount}
+let checks = {};    // {id: bool}
+let foodEst = 6500;
+let loanEst = 900;
+
+function $(id){return document.getElementById(id);}
+function showToast(m,err){const t=$('toast');t.textContent=m;t.className='toast show'+(err?' err':'');setTimeout(()=>t.className='toast',2400);}
+function fmt(n){return (n<0?'-':'')+Math.abs(n).toLocaleString('he-IL');}
+function money(n){return fmt(Math.round(n))+' ₪';}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function todayISO(){return new Date().toISOString().slice(0,10);}
+
+const totalIncome = INCOME.reduce((a,b)=>a+b.v,0);
+const totalExp = EXPENSES.reduce((a,b)=>a+b.v,0);
+
+/* ===== טאבים ===== */
+function showTab(n){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const order={dash:0,budget:1,loan:2,cash:3,plan:4};
+  document.querySelectorAll('.tab')[order[n]].classList.add('active');
+  $('panel-'+n).classList.add('active');
+  if(n==='dash')renderDash(); if(n==='budget')renderBudget(); if(n==='loan')renderLoan();
+  if(n==='cash')renderCash(); if(n==='plan')renderPlan();
+}
+
+/* ===== דשבורד ===== */
+function currentBalance(){
+  // היתרה העדכנית: נקודת התחלה + כל ההורדות שעברו תאריך
+  const today = todayISO();
+  let b = START_BALANCE;
+  const keys=Object.keys(balances).sort();
+  if(keys.length && keys[keys.length-1]<=today) b=balances[keys[keys.length-1]];
+  return b;
+}
+function upcoming(){
+  const today=todayISO();
+  return UPCOMING.filter(u=>u.d>=today).sort((a,b)=>a.d.localeCompare(b.d));
+}
+function renderDash(){
+  const bal=currentBalance();
+  const upd=upcoming();
+  const totalDrop=upd.reduce((a,b)=>a+b.v,0);
+  const projected=bal-totalDrop;
+  $('dBalance').textContent=money(bal);
+  $('dBalance').className='big '+(bal<0?'neg':'pos');
+  // אזהרה
+  const alertBox=$('dashAlert');
+  if(projected < -FRAME){
+    alertBox.className='alert';
+    alertBox.innerHTML=`<b>🚨 חריגה צפויה מהמסגרת!</b><br>אחרי ההורדות הקרובות (${money(totalDrop)}) המצב הצפוי: <b class="neg">${money(projected)}</b> — מתחת למסגרת ב-${money(projected+FRAME)}. <b>דרושה הלוואה דחופה.</b>`;
+  } else if(bal<-FRAME*0.7){
+    alertBox.className='alert';
+    alertBox.innerHTML=`<b>⚠️ מתקרבים למסגרת.</b> יתרה: ${money(bal)} · אחרי הורדות: ${money(projected)} (פנוי במסגרת: ${money(FRAME+projected)}).`;
+  } else {
+    alertBox.className='alert good';
+    alertBox.innerHTML=`<b>✅ במסגרת.</b> אחרי ההורדות הקרובות: ${money(projected)} · פנוי במסגרת: ${money(FRAME+projected)}.`;
+  }
+  // הורדות
+  $('dUpcoming').innerHTML=upd.length?upd.map(u=>`
+    <div class="exp-row"><span>${u.d.slice(5).replace('-','/')} · ${esc(u.n)}</span><b class="neg">-${money(u.v)}</b></div>`).join('')+
+    `<div class="exp-row"><b>סה"כ יורד</b><b class="neg">-${money(totalDrop)}</b></div>`:'<p class="mut">אין הורדות קרובות</p>';
+  // מסגרת
+  const use=Math.min(100,Math.max(0,(-projected)/FRAME*100));
+  $('frameBar').style.width=use+'%';
+  $('frameBarWrap').className='bar'+(use>85?' red':use>60?' orange':'');
+  $('frameText').textContent=`ניצול צפוי אחרי הורדות: ${Math.round(use)}% מהמסגרת (${money(FRAME+projected)} פנוי)`;
+}
+
+/* ===== תקציב ===== */
+function renderBudget(){
+  $('incomeList').innerHTML=INCOME.map(i=>`<div class="exp-row"><span>${esc(i.n)}</span><b class="pos">+${money(i.v)}</b></div>`).join('');
+  $('expList').innerHTML=EXPENSES.map(e=>`<div class="exp-row"><span>${esc(e.n)}</span><b>${money(e.v)}</b></div>`).join('');
+  $('totalIncome').textContent='+'+money(totalIncome);
+  $('totalExp').textContent=totalExp.toLocaleString('he-IL')+' ₪';
+  recalcFree();
+}
+function recalcFree(){
+  foodEst=+$('foodEst').value||foodEst;
+  loanEst=+$('loanEst').value||loanEst;
+  const other=foodEst+loanEst;
+  const free=totalIncome-totalExp-other;
+  $('fIncome').textContent=money(totalIncome);
+  $('fExp').textContent=money(totalExp);
+  $('fOther').textContent=money(other);
+  const el=$('fFree'); el.textContent=money(free);
+  el.className='big '+(free<0?'neg':free<2000?'warn':'pos');
+  $('foodEst').value=foodEst; $('loanEst').value=loanEst;
+  save();
+}
+
+/* ===== הלוואה ===== */
+function renderLoan(){
+  const bal=currentBalance();
+  const upd=upcoming();
+  const totalDrop=upd.reduce((a,b)=>a+b.v,0);
+  // נכנסות: משכורת ידועה 10,000 + (נניח עוד 10,000 עד סוף החודש?)
+  const incoming=10000;
+  const need=Math.max(0, -(bal-totalDrop+incoming)-FRAME+15000); // מרווח 15K
+  $('lDrops').textContent=money(totalDrop);
+  const needBox=$('loanNeed');
+  const alertBox=$('loanAlert');
+  const worst=bal-totalDrop+incoming;
+  if(worst<-FRAME){
+    alertBox.className='alert';
+    alertBox.innerHTML=`<b>🚨 המצב הקריטי:</b> אחרי ההורדות (${money(totalDrop)}) ורק ${money(incoming)} שנכנסים — תהיו ב-<b class="neg">${money(worst)}</b>, כלומר <b>${money(-worst-FRAME)} מעבר למסגרת</b>.`;
+  } else {
+    alertBox.className='alert good';
+    alertBox.innerHTML=`<b>✅</b> אחרי הורדות והכנסות: ${money(worst)} (במסגרת).`;
+  }
+  $('loanCalc').innerHTML=`
+    <div class="exp-row"><span>מינוס נוכחי</span><b class="neg">${money(bal)}</b></div>
+    <div class="exp-row"><span>הורדות קרובות (10-11.9)</span><b class="neg">-${money(totalDrop)}</b></div>
+    <div class="exp-row"><span>משכורת נכנסת (אומדן)</span><b class="pos">+${money(incoming)}</b></div>
+    <div class="exp-row" style="border-bottom:2px solid var(--line)"><b>גרעון צפוי</b><b class="neg">${money(bal-totalDrop+incoming)}</b></div>
+    <div class="exp-row"><span>מרווח נשימה רצוי בתוך המסגרת</span><b>${money(15000)}</b></div>
+    <div class="exp-row"><b style="font-size:1.1em">🏦 סכום הלוואה מומלץ</b><b class="warn" style="font-size:1.1em">${money(Math.max(0,need))}</b></div>`;
+  simulate();
+}
+function payment(amt,months,rate){
+  const r=rate/100/12;
+  if(r===0)return amt/months;
+  return amt*r*Math.pow(1+r,months)/(Math.pow(1+r,months)-1);
+}
+function simulate(){
+  const amt=+$('simAmt').value||40000;
+  const months=+$('simMonths').value||60;
+  const rate=+$('simRate').value||8;
+  const pmt=payment(amt,months,rate);
+  const total=pmt*months;
+  $('simPmt').textContent=money(pmt);
+  $('simTotal').textContent=money(total);
+  $('simCost').textContent=money(total-amt);
+  // בדיקת היתכנות: החזר חדש + הוצאות + אוכל <= פנוי
+  const free=totalIncome-totalExp-foodEst;
+  const feasible=free>=pmt;
+  const el=$('simFeas');
+  el.textContent=feasible?'✅ מתאים':'⚠️ גבוה';
+  el.className='big '+(feasible?'pos':'warn');
+}
+
+/* ===== תזרים ===== */
+function renderCash(){
+  $('balDate').value=todayISO();
+  const keys=Object.keys(balances).sort().reverse();
+  $('balHistory').innerHTML=keys.length?keys.map(k=>`
+    <div class="exp-row"><span>📅 ${k}</span><b class="${balances[k]<0?'neg':'pos'}">${money(balances[k])}</b></div>`).join(''):'<p class="mut">עדיין לא נשמרו יתרות. שמרו את היתרה של היום כדי להתחיל מעקב.</p>';
+  $('upcomingList').innerHTML=UPCOMING.sort((a,b)=>a.d.localeCompare(b.d)).map(u=>`
+    <div class="exp-row"><span>${u.d.slice(5).replace('-','/')} · ${esc(u.n)}</span><b class="neg">-${money(u.v)}</b></div>`).join('');
+}
+function addBalance(){
+  const d=$('balDate').value||todayISO();
+  const v=+$('balAmount').value;
+  if(!v&&v!==0){showToast('❌ הכניסו יתרה',true);return;}
+  balances[d]=v;
+  save();
+  showToast('✅ נשמר: '+money(v)+' ('+d+')');
+  renderDash(); renderCash();
+  $('balAmount').value='';
+}
+
+/* ===== תוכנית ===== */
+function renderPlan(){
+  const bal=currentBalance();
+  const steps=[
+    {t:'לקיחת הלוואה לאיחוד', d:`סגירת המינוס (${money(bal)}) + כיסוי ההורדות הקרובות — לפני 10.9!`, done:false,id:'p1'},
+    {t:'בדיקת איחוד שתי ההלוואות הקיימות', d:'הלוואה 1 (960/חודש) + הלוואה 2 (411/חודש) = 1,371/חודש. איחוד לריבית אחת נמוכה יותר יכול לחסוך מאות בחודש.',done:false,id:'p2'},
+    {t:'בניית קרן חירום קטנה', d:'מטרה: 5,000-10,000 ₪ בצד להוצאות בלת"מ — מונע חזרה למינוס.',done:false,id:'p3'},
+    {t:'הקטנת הוצאות קבועות', d:'בדיקת: ביטוחים (1,000), דיגיטל (209), פנגו (100), מרפאט (130), ועד — כל 100 ₪ שנחתך = 1,200 בשנה.',done:false,id:'p4'},
+    {t:'סילוק מוקדם של ההלוואה החדשה', d:'כל בונוס/הכנסה נוספת → ישר להלוואה (חוסך ריבית).',done:false,id:'p5'},
+    {t:'מעקב שבועי', d:'עדכון יתרת העו"ש בפלטפורמה כל יום חמישי (5 דקות).',done:false,id:'p6'}
+  ];
+  $('planSteps').innerHTML=steps.map((s,i)=>`
+    <div class="exp-row" style="padding:8px 2px"><div><b>${i+1}. ${s.t}</b><br><small class="mut">${s.d}</small></div></div>`).join('');
+  const checks=[
+    {id:'c1',t:'📞 להתקשר לבנק על איחוד/מיחזור הלוואות'},
+    {id:'c2',t:'🏦 לברר הלוואה — השוואת ריבית (בנק מול חברות האשראי)'},
+    {id:'c3',t:'💳 לבדוק את החיוב הגדול של ישראכרט (32K) — פריסה/הוצאת דברים שלא היו צריכים'},
+    {id:'c4',t:'🗓️ לסמן בלוח: 10.9 חיובים · 11.9 שכירות+גן'},
+    {id:'c5',t:'🛒 תקציב סופר שבועי (להקפיד החודש)'},
+    {id:'c6',t:'📊 עדכון יתרה בפלטפורמה בסוף כל שבוע'}
+  ];
+  $('planChecks').innerHTML=checks.map(c=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 2px;cursor:pointer;font-size:.92em">
+      <input type="checkbox" style="width:20px;height:20px;accent-color:var(--green)" ${checks[c.id]?'checked':''} onchange="toggleCheck('${c.id}')">
+      ${c.t}
+    </label>`).join('');
+}
+
+/* ===== שמירה ===== */
+function save(){ localStorage.setItem('famplan_v1',JSON.stringify({balances,checks,foodEst,loanEst})); pushCloud(); }
+function pushCloud(){
+  const payload={updated:new Date().toISOString(),balances,checks,foodEst,loanEst};
+  fetch('https://api.jsonbin.io/v3/b/'+BIN_ID,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Master-Key':MASTER_KEY,'X-Bin-Versioning':'false'},
+    body:JSON.stringify(payload)
+  }).then(r=>{ if(!r.ok) showToast('⚠️ בעיית סנכרון ('+r.status+')',true); }).catch(()=>{});
+}
+function pullCloud(){
+  return fetch('https://api.jsonbin.io/v3/b/'+BIN_ID+'/latest',{headers:{'X-Master-Key':MASTER_KEY}})
+    .then(r=>r.json()).then(j=>{
+      const d=(j&&j.record)?j.record:j;
+      if(d&&d.balances){
+        // מיזוג עדין: אם לענן יש יותר נתוני יתרות מלוקלי — לוקחים ענן
+        const localCount=Object.keys(balances).length;
+        const cloudCount=Object.keys(d.balances).length;
+        if(cloudCount>=localCount){
+          balances=d.balances||{}; checks=d.checks||{}; foodEst=d.foodEst||6500; loanEst=d.loanEst||900;
+          localStorage.setItem('famplan_v1',JSON.stringify({balances,checks,foodEst,loanEst}));
+        } else {
+          pushCloud(); // לוקלי עשיר יותר — דוחפים לענן
+        }
+      }
+    }).catch(()=>{});
+}
+function load(){
+  try{const s=JSON.parse(localStorage.getItem('famplan_v1'));if(s){balances=s.balances||{};checks=s.checks||{};foodEst=s.foodEst||6500;loanEst=s.loanEst||900;}}catch(e){}
+}
+
+/* ===== init ===== */
+load();
+$('foodEst').value=foodEst;
+$('loanEst').value=loanEst;
+pullCloud().then(()=>{
+  $('foodEst').value=foodEst;
+  $('loanEst').value=loanEst;
+  renderDash(); renderBudget(); renderLoan(); renderCash(); renderPlan();
+  showToast('☁️ נטען מהענן');
+});
+
+window.showTab=showTab; window.recalcFree=recalcFree; window.simulate=simulate;
+window.addBalance=addBalance; window.toggleCheck=toggleCheck;
+function toggleCheck(id){checks[id]=!checks[id];save();}
+</script>
+</body>
+</html>
