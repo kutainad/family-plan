@@ -128,9 +128,9 @@ td{padding:6px 3px;border-bottom:1px solid var(--line)}
         <div class="stat"><b class="warn" id="lNeed">—</b><small>צריך לכסות</small></div>
       </div>
       <div class="row" style="margin-top:8px">
-        <div style="flex:1"><label>משכורת נדב החודש (₪)</label><input type="number" id="sSalary" value="10000" oninput="renderLoan()"></div>
-        <div style="flex:1"><label>משכורת טל החודש (₪, אם ידועה)</label><input type="number" id="sSalaryTal" value="12000" oninput="renderLoan()"></div>
-        <div style="flex:1"><label>הוצאות מחיה עד סוף החודש (₪)</label><input type="number" id="sLiving" value="5500" oninput="renderLoan()"></div>
+        <div style="flex:1"><label>משכורת נדב שתיכנס 10.9 (₪)</label><input type="number" id="sSalary" value="10000" oninput="renderLoan()"></div>
+        <div style="flex:1"><label>משכורות נוספות שייכנסו החודש (₪) — טל כבר נכללה במינוס!</label><input type="number" id="sSalaryTal" value="0" oninput="renderLoan()"></div>
+        <div style="flex:1"><label>הוצאות מחיה עד סוף החודש (₪)</label><input type="number" id="sLiving" value="7000" oninput="renderLoan()"></div>
       </div>
       <div id="loanCalc" style="margin-top:10px"></div>
     </div>
