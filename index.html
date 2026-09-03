@@ -124,17 +124,22 @@ td{padding:6px 3px;border-bottom:1px solid var(--line)}
       <div class="grid4" style="margin-top:8px">
         <div class="stat"><b class="neg">43,000</b><small>מינוס עכשיו</small></div>
         <div class="stat"><b class="neg" id="lDrops">44,042</b><small>הורדות עד 11.9</small></div>
-        <div class="stat"><b class="pos" id="lIn">10,000</b><small>משכורת נכנסת</small></div>
+        <div class="stat"><b class="pos" id="lIn">10,000</b><small>משכורת נכנסת 10.9</small></div>
         <div class="stat"><b class="warn" id="lNeed">—</b><small>צריך לכסות</small></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1"><label>משכורת נדב החודש (₪)</label><input type="number" id="sSalary" value="10000" oninput="renderLoan()"></div>
+        <div style="flex:1"><label>משכורת טל החודש (₪, אם ידועה)</label><input type="number" id="sSalaryTal" value="12000" oninput="renderLoan()"></div>
+        <div style="flex:1"><label>הוצאות מחיה עד סוף החודש (₪)</label><input type="number" id="sLiving" value="5500" oninput="renderLoan()"></div>
       </div>
       <div id="loanCalc" style="margin-top:10px"></div>
     </div>
     <div class="card">
       <h3>🧮 סימולטור החזר</h3>
       <div class="row">
-        <div class="grow"><label>סכום הלוואה (₪)</label><input type="number" id="simAmt" value="40000" oninput="simulate()"></div>
+        <div class="grow"><label>סכום הלוואה (₪)</label><input type="number" id="simAmt" value="45000" oninput="simulate()"></div>
         <div class="grow"><label>תקופה (חודשים)</label><input type="number" id="simMonths" value="60" oninput="simulate()"></div>
-        <div class="grow"><label>ריבית שנתית (%)</label><input type="number" id="simRate" value="8" oninput="simulate()"></div>
+        <div class="grow"><label>ריבית שנתית (%)</label><input type="number" id="simRate" value="3.5" oninput="simulate()"></div>
       </div>
       <div class="grid4" style="margin-top:10px">
         <div class="stat"><b id="simPmt">—</b><small>החזר חודשי</small></div>
@@ -300,27 +305,34 @@ function renderLoan(){
   const bal=currentBalance();
   const upd=upcoming();
   const totalDrop=upd.reduce((a,b)=>a+b.v,0);
-  // נכנסות: משכורת ידועה 10,000 + (נניח עוד 10,000 עד סוף החודש?)
-  const incoming=10000;
-  const need=Math.max(0, -(bal-totalDrop+incoming)-FRAME+15000); // מרווח 15K
-  $('lDrops').textContent=money(totalDrop);
-  const needBox=$('loanNeed');
+  // הכנסות החודש: משכורת נדב + טל (ברירות מחדל 10K / 12K)
+  const salN=+$('sSalary').value||0;
+  const salT=+$('sSalaryTal').value||0;
+  const living=+$('sLiving').value||0;
+  const incoming=salN+salT;
+  $('lIn').textContent=money(incoming);
+  // הנקודה העמוקה ביותר: אחרי כל ההורדות + הכנסות - מחיה
+  const worst=bal-totalDrop+incoming-living;
   const alertBox=$('loanAlert');
-  const worst=bal-totalDrop+incoming;
   if(worst<-FRAME){
     alertBox.className='alert';
-    alertBox.innerHTML=`<b>🚨 המצב הקריטי:</b> אחרי ההורדות (${money(totalDrop)}) ורק ${money(incoming)} שנכנסים — תהיו ב-<b class="neg">${money(worst)}</b>, כלומר <b>${money(-worst-FRAME)} מעבר למסגרת</b>.`;
+    alertBox.innerHTML=`<b>🚨 המצב הקריטי:</b> הנקודה העמוקה ביותר החודש (אחרי הורדות ${money(totalDrop)} + הכנסות ${money(incoming)} − מחיה ${money(living)}): <b class="neg">${money(worst)}</b> — <b>${money(-worst-FRAME)} מעבר למסגרת</b>.`;
   } else {
     alertBox.className='alert good';
-    alertBox.innerHTML=`<b>✅</b> אחרי הורדות והכנסות: ${money(worst)} (במסגרת).`;
+    alertBox.innerHTML=`<b>✅</b> הנקודה העמוקה הצפויה: ${money(worst)} (במסגרת).`;
   }
+  // כמה הלוואה כדי שהנקודה העמוקה לא תרד מתחת ל-45K מינוס (10K מרווח במסגרת 55K)
+  const target=-45000;
+  const need=Math.max(0,worst-target);
   $('loanCalc').innerHTML=`
     <div class="exp-row"><span>מינוס נוכחי</span><b class="neg">${money(bal)}</b></div>
     <div class="exp-row"><span>הורדות קרובות (10-11.9)</span><b class="neg">-${money(totalDrop)}</b></div>
-    <div class="exp-row"><span>משכורת נכנסת (אומדן)</span><b class="pos">+${money(incoming)}</b></div>
-    <div class="exp-row" style="border-bottom:2px solid var(--line)"><b>גרעון צפוי</b><b class="neg">${money(bal-totalDrop+incoming)}</b></div>
-    <div class="exp-row"><span>מרווח נשימה רצוי בתוך המסגרת</span><b>${money(15000)}</b></div>
-    <div class="exp-row"><b style="font-size:1.1em">🏦 סכום הלוואה מומלץ</b><b class="warn" style="font-size:1.1em">${money(Math.max(0,need))}</b></div>`;
+    <div class="exp-row"><span>משכורות שנכנסות החודש (נדב+טל)</span><b class="pos">+${money(incoming)}</b></div>
+    <div class="exp-row"><span>הוצאות מחיה עד סוף החודש</span><b class="neg">-${money(living)}</b></div>
+    <div class="exp-row" style="border-bottom:2px solid var(--line)"><b>נקודה עמוקה צפויה</b><b class="neg">${money(worst)}</b></div>
+    <div class="exp-row"><span>מרווח רצוי בתוך המסגרת (מקסימום מינוס 45,000)</span><b>${money(10000)}</b></div>
+    <div class="exp-row"><b style="font-size:1.15em">🏦 סכום הלוואה מומלץ</b><b class="warn" style="font-size:1.15em">${money(need)}</b></div>
+    <p class="mut" style="margin-top:6px">💡 אם המשכורות נכנסות לפני 11.9 — אפשר לקחת פחות. אם יש ספק — עדיף קצת יותר (ריבית עובדי בנק נמוכה).</p>`;
   simulate();
 }
 function payment(amt,months,rate){
